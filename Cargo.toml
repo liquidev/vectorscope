@@ -12,3 +12,4 @@ cpal = { version = "0.13.3", features = ["jack"] }
 pixels = "0.2.0"
 winit = "0.24.0"
 anyhow = "1.0.40"
+line_drawing = "0.8.0"
