@@ -36,7 +36,7 @@ impl AudioState {
             &StreamConfig {
                 channels: 2,
                 sample_rate: SampleRate(48000),
-                buffer_size: BufferSize::Fixed(256),
+                buffer_size: BufferSize::Fixed(128),
             },
             move |in_samples: &[f32], _info| {
                 let mut samples = samples.lock().unwrap();
@@ -108,7 +108,7 @@ impl Plot<'_, '_> {
         while i < 256 {
             let n = i as i32;
             colors[i].1 = to_u8(n * 2);
-            let rb = to_u8((n - 128) * 2);
+            let rb = to_u8(((n - 128) as f32 * 1.5) as i32);
             colors[i].0 += rb;
             colors[i].2 += rb;
             i += 1;
@@ -171,12 +171,20 @@ impl Plot<'_, '_> {
         }
     }
 
-    fn pixel(&mut self, x: i32, y: i32) {
+    fn pixel(&mut self, x: i32, y: i32, intensity: u8) {
         if (0..self.width as i32).contains(&x) && (0..self.height as i32).contains(&y) {
             let (x, y) = (x as u32, y as u32);
             let i = (x + y * self.width) as usize;
-            self.plot[i] = self.plot[i].saturating_add(32);
+            self.plot[i] = self.plot[i].saturating_add(intensity);
         }
+    }
+
+    fn point(&mut self, x: i32, y: i32, intensity: u8) {
+        self.pixel(x, y, intensity);
+//         self.pixel(x + 1, y, intensity);
+//         self.pixel(x - 1, y, intensity);
+//         self.pixel(x, y + 1, intensity);
+//         self.pixel(x, y - 1, intensity);
     }
 
     fn dot(&mut self, x0: i32, y0: i32, x1: i32, y1: i32) {
@@ -184,7 +192,7 @@ impl Plot<'_, '_> {
         let (x1, y1) = (x1 as i32, y1 as i32);
         for (x, y) in line_drawing::Bresenham::new((x0, y0), (x1, y1)) {
             if (x, y) != self.previous_pos1 {
-                self.pixel(x, y);
+                self.point(x, y, 16);
             }
         }
         self.previous_pos1 = (x1, y1);
